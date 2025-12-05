@@ -1,0 +1,292 @@
+---
+title: Examples
+description: Practical examples demonstrating Ore dependency injection patterns
+---
+
+## Real-World Examples
+
+Explore complete examples showing how to use Ore in typical Go application scenarios.
+
+<Steps>
+  <Step title="Web Application" icon="globe">
+    Build a REST API with dependency injection.
+  </Step>
+  <Step title="Database Layer" icon="database">
+    Implement data access patterns with Ore.
+  </Step>
+  <Step title="Testing Setup" icon="check-circle">
+    Configure testing with mocked dependencies.
+  </Step>
+</Steps>
+
+## Web Application Example
+
+Create a simple HTTP server with dependency injection:
+
+<CodeGroup tabs="main.go,handlers.go,services.go">
+  ```go
+package main
+
+import (
+    "net/http"
+    "github.com/ore/ore"
+)
+
+func main() {
+    container := setupContainer()
+    
+    userHandler := container.Resolve[UserHandler]()
+    
+    http.HandleFunc("/users", userHandler.ListUsers)
+    http.ListenAndServe(":8080", nil)
+}
+
+func setupContainer() *ore.Container {
+    container := ore.NewContainer()
+    
+    container.RegisterSingleton[Database](func() Database {
+        return NewPostgreSQLConnection()
+    })
+    
+    container.Register[UserRepository](func() UserRepository {
+        db := container.Resolve[Database]()
+        return NewUserRepository(db)
+    })
+    
+    container.Register[UserService](func() UserService {
+        repo := container.Resolve[UserRepository]()
+        return NewUserService(repo)
+    })
+    
+    container.Register[UserHandler](func() UserHandler {
+        service := container.Resolve[UserService]()
+        return NewUserHandler(service)
+    })
+    
+    return container
+}
+```
+  ```go
+type UserHandler struct {
+    service UserService `ore:"inject"`
+}
+
+func NewUserHandler(service UserService) UserHandler {
+    return UserHandler{service: service}
+}
+
+func (h UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
+    users, err := h.service.GetAllUsers()
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    
+    // Return users as JSON
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(users)
+}
+```
+  ```go
+type UserService struct {
+    repo UserRepository `ore:"inject"`
+}
+
+func NewUserService(repo UserRepository) UserService {
+    return UserService{repo: repo}
+}
+
+func (s UserService) GetAllUsers() ([]User, error) {
+    return s.repo.FindAll()
+}
+
+// Interfaces and implementations...
+```
+</CodeGroup>
+
+<Callout kind="tip">
+  Use constructor injection for cleaner code and easier testing.
+</Callout>
+
+## Database Abstraction
+
+Implement a repository pattern with dependency injection:
+
+<Tabs>
+  <Tab title="Repository Interface" icon="code">
+    ```go
+type UserRepository interface {
+    FindByID(id int) (*User, error)
+    Save(user *User) error
+    FindAll() ([]User, error)
+}
+```
+  </Tab>
+  <Tab title="Implementation" icon="database">
+    ```go
+type PostgreSQLUserRepository struct {
+    db *sql.DB `ore:"inject"`
+}
+
+func NewPostgreSQLUserRepository(db *sql.DB) UserRepository {
+    return &PostgreSQLUserRepository{db: db}
+}
+
+func (r *PostgreSQLUserRepository) FindByID(id int) (*User, error) {
+    var user User
+    err := r.db.QueryRow("SELECT id, name, email FROM users WHERE id = $1", id).
+        Scan(&user.ID, &user.Name, &user.Email)
+    return &user, err
+}
+```
+  </Tab>
+  <Tab title="Registration" icon="settings">
+    ```go
+container.RegisterSingleton[*sql.DB](func() *sql.DB {
+    return setupDatabaseConnection()
+})
+
+container.Register[UserRepository](func() UserRepository {
+    db := container.Resolve[*sql.DB]()
+    return NewPostgreSQLUserRepository(db)
+})
+```
+  </Tab>
+</Tabs>
+
+## Testing with Mocks
+
+Create testable code with dependency injection:
+
+<Expandable title="Unit Test Example" default-open="false">
+  ```go
+func TestUserService_GetUser(t *testing.T) {
+    container := ore.NewContainer()
+    
+    // Register mock repository
+    container.Register[UserRepository](func() UserRepository {
+        return &MockUserRepository{
+            users: []User{
+                {ID: 1, Name: "John Doe", Email: "john@example.com"},
+            },
+        }
+    })
+    
+    service := container.Resolve[UserService]()
+    user, err := service.GetUserByID(1)
+    
+    assert.NoError(t, err)
+    assert.Equal(t, "John Doe", user.Name)
+}
+
+// Mock implementation
+type MockUserRepository struct {
+    users []User
+}
+
+func (m *MockUserRepository) FindByID(id int) (*User, error) {
+    for _, user := range m.users {
+        if user.ID == id {
+            return &user, nil
+        }
+    }
+    return nil, errors.New("user not found")
+}
+```
+</Expandable>
+
+<ExpandableGroup>
+  <Expandable title="Integration Tests" default-open="false">
+    Use real dependencies for integration testing.
+  </Expandable>
+  <Expandable title="Mock Libraries" default-open="false">
+    Integrate with mocking libraries like testify/mock.
+  </Expandable>
+</ExpandableGroup>
+
+## Command-Line Application
+
+Build a CLI tool with dependency injection:
+
+```go
+func main() {
+    container := setupCLIContainer()
+    
+    cmd := container.Resolve[RootCommand]()
+    cmd.Execute()
+}
+
+func setupCLIContainer() *ore.Container {
+    container := ore.NewContainer()
+    
+    container.Register[ConfigLoader](func() ConfigLoader {
+        return NewFileConfigLoader("config.yaml")
+    })
+    
+    container.Register[APIClient](func() APIClient {
+        config := container.Resolve[ConfigLoader]().Load()
+        return NewAPIClient(config.APIKey)
+    })
+    
+    container.Register[RootCommand](func() RootCommand {
+        client := container.Resolve[APIClient]()
+        return NewRootCommand(client)
+    })
+    
+    return container
+}
+```
+
+<Callout kind="success">
+  These examples demonstrate how Ore enables clean architecture and testable code.
+</Callout>
+
+## Advanced Patterns
+
+### Plugin Architecture
+
+Create extensible applications with dependency injection:
+
+```go
+type PluginManager struct {
+    plugins []Plugin `ore:"inject"`
+}
+
+func (pm PluginManager) LoadPlugins() {
+    for _, plugin := range pm.plugins {
+        plugin.Initialize()
+    }
+}
+
+// Registration
+container.Register[[]Plugin](func() []Plugin {
+    return []Plugin{
+        NewLoggingPlugin(),
+        NewMetricsPlugin(),
+    }
+})
+```
+
+### Configuration-Driven Dependencies
+
+Load dependencies based on configuration:
+
+<Expandable title="Dynamic Registration" default-open="false">
+  ```go
+func setupContainer(config Config) *ore.Container {
+    container := ore.NewContainer()
+    
+    if config.UsePostgreSQL {
+        container.Register[Database](func() Database {
+            return NewPostgreSQLDB(config.DBURL)
+        })
+    } else {
+        container.Register[Database](func() Database {
+            return NewSQLiteDB(config.DBPath)
+        })
+    }
+    
+    return container
+}
+```
+</Expandable>

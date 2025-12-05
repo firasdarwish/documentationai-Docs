@@ -1,0 +1,194 @@
+---
+title: Usage
+description: Learn how to use Ore for dependency injection in Go applications
+---
+
+## Basic Usage Patterns
+
+Ore provides a simple API for registering and resolving dependencies. Let's explore the core concepts with practical examples.
+
+<Steps>
+  <Step title="Create Container" icon="settings">
+    Initialize a new dependency container.
+    ```go
+container := ore.NewContainer()
+```
+  </Step>
+  <Step title="Define Dependencies" icon="code">
+    Create interfaces and implementations.
+    ```go
+type Logger interface {
+    Log(message string)
+}
+
+type ConsoleLogger struct{}
+
+func (c ConsoleLogger) Log(message string) {
+    fmt.Println(message)
+}
+```
+  </Step>
+  <Step title="Register Dependencies" icon="plus">
+    Register implementations in the container.
+    ```go
+container.Register[Logger](func() Logger {
+    return ConsoleLogger{}
+})
+```
+  </Step>
+  <Step title="Resolve Dependencies" icon="zap">
+    Retrieve dependencies when needed.
+    ```go
+logger := container.Resolve[Logger]()
+logger.Log("Hello, Ore!")
+```
+  </Step>
+</Steps>
+
+## Dependency Lifecycles
+
+Ore supports different lifecycle management strategies:
+
+<Tabs>
+  <Tab title="Transient" icon="refresh-cw">
+    New instance created each time resolved.
+    ```go
+container.RegisterTransient[Service](func() Service {
+    return NewService()
+})
+```
+  </Tab>
+  <Tab title="Singleton" icon="lock">
+    Single instance shared across all resolutions.
+    ```go
+container.RegisterSingleton[Service](func() Service {
+    return NewService()
+})
+```
+  </Tab>
+  <Tab title="Scoped" icon="layers">
+    Instance shared within a scope.
+    ```go
+scope := container.CreateScope()
+service := scope.Resolve[Service]()
+```
+  </Tab>
+</Tabs>
+
+<Callout kind="info">
+  Singleton dependencies are created once and reused, while transient dependencies are created fresh each resolution.
+</Callout>
+
+## Constructor Injection
+
+Ore supports automatic injection of dependencies into struct fields:
+
+```go
+type UserService struct {
+    logger Logger `ore:"inject"`
+    db Database `ore:"inject"`
+}
+
+container.Register[Logger](func() Logger {
+    return ConsoleLogger{}
+})
+
+container.Register[Database](func() Database {
+    return NewDatabase()
+})
+
+userService := container.Resolve[UserService]()
+// Dependencies automatically injected
+```
+
+<Expandable title="Tag-Based Injection" default-open="false">
+  Use struct tags to specify dependency keys when multiple implementations exist.
+  ```go
+type Service struct {
+    primary Logger `ore:"inject,primary"`
+    backup Logger `ore:"inject,backup"`
+}
+```
+</Expandable>
+
+## Error Handling
+
+Ore provides clear error messages for common issues:
+
+<ExpandableGroup>
+  <Expandable title="Unregistered Dependency" default-open="false">
+    Attempting to resolve an unregistered dependency returns an error.
+    ```go
+_, err := container.Resolve[UnknownType]()
+// Returns: dependency not registered: UnknownType
+```
+  </Expandable>
+  <Expandable title="Circular Dependencies" default-open="false">
+    Ore detects circular dependencies and returns an error to prevent infinite loops.
+  </Expandable>
+</ExpandableGroup>
+
+<Callout kind="alert">
+  Always check for errors when resolving dependencies in production code.
+</Callout>
+
+## Testing with Ore
+
+Ore makes testing easier by allowing dependency mocking:
+
+<CodeGroup tabs="Test Setup,Mock Example">
+  ```go
+func TestUserService(t *testing.T) {
+    container := ore.NewContainer()
+    
+    // Register mock dependencies
+    container.Register[Logger](func() Logger {
+        return &MockLogger{}
+    })
+    
+    userService := container.Resolve[UserService]()
+    // Test with mocked dependencies
+}
+```
+  ```go
+type MockLogger struct {
+    logs []string
+}
+
+func (m *MockLogger) Log(message string) {
+    m.logs = append(m.logs, message)
+}
+```
+</CodeGroup>
+
+## Advanced Patterns
+
+### Factory Functions
+
+Use factory functions for complex dependency creation:
+
+```go
+container.Register[Database](func() Database {
+    config := loadConfig()
+    return NewDatabase(config)
+})
+```
+
+### Named Dependencies
+
+Register multiple implementations with different keys:
+
+```go
+container.RegisterNamed[Logger]("file", func() Logger {
+    return FileLogger{}
+})
+
+fileLogger := container.ResolveNamed[Logger]("file")
+```
+
+<Expandable title="Performance Tips" default-open="false">
+  - Use singletons for expensive resources
+  - Avoid circular dependencies
+  - Register dependencies once at application startup
+  - Use scoped containers for request-scoped dependencies
+</Expandable>

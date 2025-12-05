@@ -1,0 +1,129 @@
+---
+title: Installation
+description: Step-by-step guide to installing and setting up Ore in your Go project
+---
+
+## Installing Ore
+
+Getting started with Ore is straightforward. Follow these steps to add dependency injection to your Go application.
+
+<Steps>
+  <Step title="Prerequisites" icon="check-circle">
+    Ensure you have Go 1.18 or later installed. Ore leverages generics introduced in Go 1.18.
+  </Step>
+  <Step title="Add Dependency" icon="download">
+    Use Go modules to add Ore to your project.
+    ```bash
+go get github.com/ore/ore
+```
+  </Step>
+  <Step title="Import Package" icon="code">
+    Import Ore in your Go files.
+    ```go
+import "github.com/ore/ore"
+```
+  </Step>
+  <Step title="Initialize Container" icon="settings">
+    Create a new dependency container.
+    ```go
+container := ore.NewContainer()
+```
+  </Step>
+</Steps>
+
+## Supported Platforms
+
+Ore works on all platforms supported by Go, including:
+
+- Linux (amd64, arm64)
+- macOS (amd64, arm64)
+- Windows (amd64)
+- FreeBSD
+- Other Go-supported platforms
+
+<Callout kind="info">
+  No additional dependencies are required beyond the Go standard library.
+</Callout>
+
+## Version Compatibility
+
+| Go Version | Ore Version | Support Status |
+|------------|-------------|----------------|
+| 1.18+      | 1.0+       | ✅ Supported  |
+| < 1.18     | N/A        | ❌ Not Supported |
+
+<CodeGroup tabs="go.mod,go.sum">
+  ```go
+module your-project
+
+go 1.19
+
+require github.com/ore/ore v1.0.0
+```
+  ```go
+github.com/ore/ore v1.0.0 h1:checksum-here
+github.com/ore/ore v1.0.0/go.mod h1:checksum-here
+```
+</CodeGroup>
+
+## Troubleshooting Installation
+
+If you encounter issues during installation:
+
+<Expandable title="Module Not Found" default-open="false">
+  Ensure your GOPROXY is configured correctly and you have internet access. Try running `go clean -modcache` and retry.
+</Expandable>
+
+<Expandable title="Go Version Too Old" default-open="false">
+  Upgrade to Go 1.18 or later. Check your version with `go version`.
+</Expandable>
+
+<ExpandableGroup>
+  <Expandable title="Proxy Issues" default-open="false">
+    Configure GOPROXY if behind a firewall: `export GOPROXY=https://proxy.golang.org,direct`
+  </Expandable>
+  <Expandable title="Checksum Mismatch" default-open="false">
+    Run `go clean -modcache` to clear cached modules and try again.
+  </Expandable>
+</ExpandableGroup>
+
+## Upgrading Ore
+
+To upgrade to a newer version of Ore:
+
+```bash
+go get -u github.com/ore/ore
+```
+
+<Callout kind="tip">
+  Always check the changelog for breaking changes before upgrading.
+</Callout>
+
+## Development Setup
+
+For contributors or local development:
+
+<Steps>
+  <Step title="Clone Repository" icon="git-branch">
+    Clone the Ore repository.
+    ```bash
+git clone https://github.com/ore/ore.git
+```
+  </Step>
+  <Step title="Run Tests" icon="check">
+    Execute the test suite.
+    ```bash
+go test ./...
+```
+  </Step>
+  <Step title="Build" icon="hammer">
+    Build the package.
+    ```bash
+go build ./...
+```
+  </Step>
+</Steps>
+
+<Expandable title="Contributing Guidelines" default-open="false">
+  Please read the CONTRIBUTING.md file for detailed development setup instructions and coding standards.
+</Expandable>

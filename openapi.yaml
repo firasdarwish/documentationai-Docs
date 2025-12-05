@@ -1,0 +1,160 @@
+openapi: '3.0.0'
+info:
+  version: 1.0.0
+  title: Ore Dependency Injection API
+  description: API for managing dependencies in Ore, a lightweight dependency injection solution for Go applications. This API provides endpoints for registering, resolving, and managing dependencies in containerized applications.
+  license:
+    name: MIT
+servers:
+  - url: http://ore-api.example.com/v1
+paths:
+  /dependencies:
+    get:
+      summary: List all registered dependencies
+      description: Retrieves a paginated list of all dependencies currently registered in the Ore container. This endpoint supports filtering by dependency type and sorting by registration order. Returns dependency metadata including type information, lifecycle, and registration details.
+      operationId: listDependencies
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        200:
+          description: An paged array of dependencies
+          headers:
+            x-next:
+              description: A link to the next page of responses
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dependencies'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Register a new dependency
+      description: Registers a new dependency in the Ore container with specified type and lifecycle. This endpoint accepts dependency configuration including the factory function, lifecycle type (singleton/transient/scoped), and optional metadata. The dependency becomes immediately available for resolution after successful registration.
+      operationId: registerDependency
+      responses:
+        201:
+          description: Dependency registered successfully
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /dependencies/{dependencyId}:
+    get:
+      summary: Get dependency information
+      description: Retrieves detailed information about a specific registered dependency. This endpoint provides comprehensive metadata including type details, current resolution status, lifecycle configuration, and usage statistics. Useful for debugging dependency resolution issues and monitoring container health.
+      operationId: getDependency
+      parameters:
+        - name: dependencyId
+          in: path
+          required: true
+          description: The unique identifier of the dependency to retrieve
+          schema:
+            type: string
+      responses:
+        200:
+          description: Detailed dependency information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dependencies'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /containers:
+    post:
+      summary: Create a new dependency container
+      description: Initializes a new Ore dependency container with specified configuration options. This endpoint allows creating containers with custom settings such as thread safety preferences, lazy loading behavior, and validation modes. The new container is ready for dependency registration and resolution.
+      operationId: createContainer
+      responses:
+        201:
+          description: Container created successfully
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /containers/{containerId}/validate:
+    post:
+      summary: Validate container configuration
+      description: Performs comprehensive validation of the specified container's dependency registrations. This endpoint checks for missing dependencies, circular references, and configuration errors. Returns detailed validation results with suggestions for fixing any issues found during the validation process.
+      operationId: validateContainer
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          description: The unique identifier of the container to validate
+          schema:
+            type: string
+      responses:
+        200:
+          description: Validation completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Dependency:
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        lifecycle:
+          type: string
+          enum: [singleton, transient, scoped]
+        registeredAt:
+          type: string
+          format: date-time
+    Dependencies:
+      type: array
+      items:
+        $ref: '#/components/schemas/Dependency'
+    ValidationResult:
+      required:
+        - valid
+        - errors
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

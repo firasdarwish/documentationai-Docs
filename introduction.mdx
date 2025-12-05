@@ -1,0 +1,87 @@
+---
+title: Introduction
+description: Overview of Ore, a lightweight dependency injection solution for Go applications
+---
+
+## Getting Started with Ore
+
+Ore is a dependency injection solution designed for Go applications, providing a lightweight, generic, and simple way to manage dependencies. With a focus on ease of use and flexibility, Ore enables developers to create more maintainable and scalable codebases by decoupling components and making testing easier.
+
+Ore simplifies dependency management in Go by offering a clean API for registering and resolving dependencies, supporting both singleton and scoped lifecycles, and integrating seamlessly with existing Go projects.
+
+<Columns cols={3}>
+  <Card title="Quick Start" icon="rocket" href="/installation">
+    Get up and running with Ore in minutes. Learn how to install and set up your first dependency container.
+  </Card>
+  <Card title="Core Concepts" icon="lightbulb" href="/usage">
+    Understand the fundamental principles of dependency injection and how Ore implements them.
+  </Card>
+  <Card title="Configuration" icon="settings" href="/configuration">
+    Explore advanced configuration options and customization features.
+  </Card>
+</Columns>
+
+## Key Features
+
+Ore stands out with its simplicity and performance. It provides:
+
+- **Lightweight Design**: Minimal overhead with fast resolution times
+- **Generic Types**: Support for any Go type without reflection
+- **Lifecycle Management**: Singleton and scoped dependency lifecycles
+- **Error Handling**: Clear error messages for debugging dependency issues
+- **Testing Support**: Easy mocking and stubbing for unit tests
+
+<Callout kind="tip">
+  Ore is built for Go 1.18+ and leverages generics for type safety.
+</Callout>
+
+## Why Choose Ore?
+
+Traditional dependency management in Go often leads to tight coupling and hard-to-test code. Ore solves this by providing a centralized container that manages object creation and injection.
+
+<Steps>
+  <Step title="Define Interfaces" icon="code">
+    Create clean interfaces for your dependencies.
+  </Step>
+  <Step title="Register Dependencies" icon="settings">
+    Register implementations in the Ore container.
+  </Step>
+  <Step title="Resolve Dependencies" icon="zap">
+    Inject dependencies automatically into your structs.
+  </Step>
+</Steps>
+
+## Example Use Case
+
+Consider a web application with database and logging services. Ore allows you to define these as interfaces and inject them into your handlers without manual instantiation.
+
+<Tabs>
+  <Tab title="Without Ore" icon="x-circle">
+    Manual dependency management leads to tight coupling and complex constructors.
+  </Tab>
+  <Tab title="With Ore" icon="check-circle">
+    Clean, decoupled code with automatic dependency injection.
+  </Tab>
+</Tabs>
+
+<Expandable title="Architecture Overview" default-open="false">
+  Ore uses a registry-based approach where dependencies are registered with unique keys and resolved on demand. The container maintains a map of factories and cached instances, ensuring efficient and thread-safe operations.
+
+  The core components include:
+  - Container: The main dependency registry
+  - Provider: Factory functions for creating dependencies
+  - Resolver: Handles dependency resolution and injection
+</Expandable>
+
+<ExpandableGroup>
+  <Expandable title="Performance Considerations" default-open="false">
+    Ore is designed for high performance with minimal memory allocation and fast lookups using Go's built-in map types.
+  </Expandable>
+  <Expandable title="Thread Safety" default-open="false">
+    All operations are thread-safe, allowing concurrent access to the container from multiple goroutines.
+  </Expandable>
+</ExpandableGroup>
+
+## Next Steps
+
+Ready to dive deeper? Start with the installation guide to set up Ore in your project, then explore usage patterns and configuration options to tailor it to your application's needs.

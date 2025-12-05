@@ -1,0 +1,213 @@
+---
+title: Configuration
+description: Advanced configuration options and customization features in Ore
+---
+
+## Configuration Overview
+
+Ore offers extensive configuration options to customize dependency injection behavior for different environments and use cases.
+
+<Steps>
+  <Step title="Container Options" icon="settings">
+    Configure container-wide settings.
+    ```go
+container := ore.NewContainer(
+    ore.WithThreadSafety(true),
+    ore.WithLazyLoading(false),
+)
+```
+  </Step>
+  <Step title="Dependency Options" icon="sliders">
+    Set options per dependency registration.
+    ```go
+container.RegisterWithOptions[Service](
+    func() Service { return NewService() },
+    ore.Singleton,
+    ore.WithName("primary"),
+)
+```
+  </Step>
+  <Step title="Validation" icon="check-circle">
+    Enable validation of registrations.
+    ```go
+err := container.Validate()
+if err != nil {
+    log.Fatal(err)
+}
+```
+  </Step>
+</Steps>
+
+## Container Configuration
+
+Customize container behavior with options:
+
+<Tabs>
+  <Tab title="Thread Safety" icon="lock">
+    Enable or disable thread-safe operations.
+    ```go
+container := ore.NewContainer(ore.WithThreadSafety(true))
+```
+  </Tab>
+  <Tab title="Lazy Loading" icon="clock">
+    Control when dependencies are instantiated.
+    ```go
+container := ore.NewContainer(ore.WithLazyLoading(true))
+```
+  </Tab>
+  <Tab title="Error Handling" icon="alert-triangle">
+    Customize error behavior.
+    ```go
+container := ore.NewContainer(ore.WithStrictMode(true))
+```
+  </Tab>
+</Tabs>
+
+<Callout kind="tip">
+  Thread safety is enabled by default for production use.
+</Callout>
+
+## Dependency Registration Options
+
+Fine-tune individual dependency registrations:
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| Singleton | Single shared instance | `ore.Singleton` |
+| Transient | New instance each time | `ore.Transient` |
+| Scoped | Instance per scope | `ore.Scoped` |
+| Named | Register with custom name | `ore.WithName("db")` |
+| Tagged | Add metadata tags | `ore.WithTags("primary")` |
+
+<Expandable title="Custom Lifecycle" default-open="false">
+  Implement custom lifecycle management by providing your own factory wrapper.
+  ```go
+container.RegisterWithLifecycle[Service](
+    func() Service { return NewService() },
+    func(factory ore.Factory[Service]) ore.Factory[Service] {
+        return func() Service {
+            svc := factory()
+            // Custom initialization
+            return svc
+        }
+    },
+)
+```
+</Expandable>
+
+## Environment-Specific Configuration
+
+Configure Ore differently for development, testing, and production:
+
+<CodeGroup tabs="Development,Production">
+  ```go
+func createDevContainer() *ore.Container {
+    container := ore.NewContainer(
+        ore.WithThreadSafety(false), // Faster in dev
+        ore.WithLazyLoading(true),
+    )
+    
+    // Register development dependencies
+    container.Register[Database](func() Database {
+        return NewInMemoryDatabase()
+    })
+    
+    return container
+}
+```
+  ```go
+func createProdContainer() *ore.Container {
+    container := ore.NewContainer(
+        ore.WithThreadSafety(true),
+        ore.WithLazyLoading(false),
+    )
+    
+    // Register production dependencies
+    container.RegisterSingleton[Database](func() Database {
+        return NewPostgreSQLDatabase()
+    })
+    
+    return container
+}
+```
+</CodeGroup>
+
+<ExpandableGroup>
+  <Expandable title="Configuration Files" default-open="false">
+    Load configuration from YAML or JSON files to define dependency registrations.
+  </Expandable>
+  <Expandable title="Environment Variables" default-open="false">
+    Use environment variables to configure container options at runtime.
+  </Expandable>
+</ExpandableGroup>
+
+## Validation and Debugging
+
+Ensure your container is properly configured:
+
+<Steps>
+  <Step title="Validate Registrations" icon="check">
+    Check for missing or circular dependencies.
+    ```go
+err := container.Validate()
+if err != nil {
+    log.Printf("Validation error: %v", err)
+}
+```
+  </Step>
+  <Step title="Debug Information" icon="search">
+    Get detailed information about registered dependencies.
+    ```go
+info := container.DebugInfo()
+fmt.Printf("Registered: %d dependencies\n", len(info))
+```
+  </Step>
+  <Step title="Performance Metrics" icon="bar-chart">
+    Monitor resolution times and memory usage.
+    ```go
+metrics := container.Metrics()
+fmt.Printf("Total resolutions: %d\n", metrics.Resolutions)
+```
+  </Step>
+</Steps>
+
+<Callout kind="info">
+  Validation is recommended during application startup to catch configuration errors early.
+</Callout>
+
+## Advanced Features
+
+### Middleware and Interceptors
+
+Add middleware to dependency resolution:
+
+```go
+container.UseMiddleware(func(next ore.Resolver) ore.Resolver {
+    return func(key string) (interface{}, error) {
+        start := time.Now()
+        result, err := next(key)
+        duration := time.Since(start)
+        log.Printf("Resolved %s in %v", key, duration)
+        return result, err
+    }
+})
+```
+
+### Custom Providers
+
+Implement custom dependency providers:
+
+```go
+type CustomProvider struct{
+    container *ore.Container
+}
+
+func (p *CustomProvider) Provide(key string) (interface{}, error) {
+    // Custom resolution logic
+    return p.container.ResolveByKey(key)
+}
+```
+
+<Expandable title="Plugin System" default-open="false">
+  Extend Ore with plugins for logging, monitoring, and custom behaviors.
+</Expandable>

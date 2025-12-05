@@ -1,0 +1,54 @@
+---
+title: Changelog
+description: Release history and updates for Ore dependency injection library
+---
+
+## Release History
+
+<Update label="2024-10-15" description="v2.1.0" tags={["feature", "improvement"]}>
+
+## New Features
+
+- Added support for named dependency resolution with `ResolveNamed[T](name string)`
+- Introduced scoped containers for request-scoped dependencies
+- Enhanced error messages with detailed dependency resolution paths
+
+## Improvements
+
+- Improved performance for singleton dependency resolution by `15%`
+- Better memory management for large numbers of transient dependencies
+- Enhanced thread safety guarantees for concurrent access
+
+</Update>
+
+<Update label="2024-09-20" description="v2.0.0" tags={["feature", "breaking"]}>
+
+## New Features
+
+- Complete rewrite using Go generics for type safety
+- Added support for struct field injection with `ore:"inject"` tags
+- Introduced middleware system for dependency resolution
+
+## Breaking Changes
+
+- Minimum Go version requirement increased to 1.18
+- Removed reflection-based dependency resolution
+- Changed API from `Register(type, factory)` to `Register[T](factory)`
+
+</Update>
+
+<Update label="2024-08-10" description="v1.2.0" tags={["feature", "bugfix"]}>
+
+## New Features
+
+- Added container validation with `Validate()` method
+- Introduced debug information with `DebugInfo()` method
+- Added performance metrics collection
+
+## Bug Fixes
+
+- Fixed race condition in singleton dependency resolution
+- Resolved memory leak in scoped containers
+- Fixed circular dependency detection for complex graphs
+
+</Update>
